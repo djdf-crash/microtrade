@@ -4,9 +4,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"middlewares"
 	"handlers"
+	"os"
 )
 
 func main() {
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+
+	ginMode := os.Getenv("GIN_MODE")
+	if ginMode != "" {
+		gin.SetMode(ginMode)
+	}
+
+
 	router := gin.Default()
 	router.Static("/public", "./public")
 	router.StaticFile("/favicon.ico", "./public/favicon.ico")
@@ -21,5 +35,5 @@ func main() {
 		v1.POST("/register",)
 	}
 
-	router.Run() // listen and serve on 0.0.0.0:8080
+	router.Run(":"+port) // listen and serve on 0.0.0.0:8080
 }
