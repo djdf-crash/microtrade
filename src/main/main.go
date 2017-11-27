@@ -14,9 +14,7 @@ func main() {
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode != "" {
 		gin.SetMode(ginMode)
-		if ginMode == "debug" {
-			port = 8080
-		}else {
+		if ginMode == "release" {
 			port = 80
 		}
 	}
