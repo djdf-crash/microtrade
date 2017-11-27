@@ -9,15 +9,16 @@ import (
 
 func main() {
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-
+	port = "8080"
+	
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode != "" {
 		gin.SetMode(ginMode)
+		if ginMode == "debug" {
+			port = 8080
+		}else {
+			port = 80
+		}
 	}
 
 
