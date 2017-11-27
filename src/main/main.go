@@ -15,7 +15,7 @@ func main() {
 	if ginMode != "" {
 		gin.SetMode(ginMode)
 		if ginMode == "release" {
-			port = 80
+			port = "80"
 		}
 	}
 
