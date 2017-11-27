@@ -1,12 +1,18 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func LoginHandler(ctx *gin.Context) {
-	resp := map[string]string{"hello":"world"}
+func LogoutHandler(ctx *gin.Context) {
+	resp := map[string]string{"Logout": "OK"}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func RegisterHandler(ctx *gin.Context) {
+	resp := map[string]string{"Register": "OK"}
 	ctx.JSON(http.StatusOK, resp)
 }
 
