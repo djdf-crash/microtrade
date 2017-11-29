@@ -5,9 +5,7 @@ import (
 
 	"db"
 
-	"crypto/rsa"
-
-	"crypto/rand"
+	"io/ioutil"
 
 	"github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
@@ -15,8 +13,7 @@ import (
 )
 
 var (
-	verifyKey *rsa.PublicKey
-	secretKey *rsa.PrivateKey
+	signBytes []byte
 )
 
 func init() {
@@ -24,7 +21,7 @@ func init() {
 }
 
 func initKeys() {
-	secretKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+	signBytes, _ = ioutil.ReadFile("./keys/secret.rsa")
 
 }
 
@@ -32,7 +29,7 @@ func AuthMiddleware() *jwt.GinJWTMiddleware {
 
 	AuthMiddleware := &jwt.GinJWTMiddleware{
 		Realm:         "test zone",
-		Key:           []byte(secretKey.D.String()),
+		Key:           signBytes,
 		Timeout:       time.Hour,
 		MaxRefresh:    time.Hour,
 		Authenticator: Authenticator,
@@ -70,15 +67,11 @@ func AuthMiddleware() *jwt.GinJWTMiddleware {
 }
 
 func Authenticator(username string, password string, ctx *gin.Context) (userName string, ok bool) {
-	var userDb db.User
-
-	db.InitDB()
-	defer db.DB.Close()
 
 	if username != "" || password != "" {
-		db.DB.Where("username=?", username).Find(&userDb)
+		user := db.FindUserByName(username)
 
-		if err := bcrypt.CompareHashAndPassword([]byte(userDb.Password), []byte(password)); err != nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 			return "", false
 		}
 

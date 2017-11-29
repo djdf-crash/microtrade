@@ -5,12 +5,17 @@ import (
 	"middlewares"
 	"os"
 
+	"db"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 
 	port := "8080"
+
+	db.InitDB()
+	defer db.DB.Close()
 
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode != "" {
@@ -21,13 +26,13 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.Static("/public", "./public")
-	router.StaticFile("/favicon.ico", "./public/favicon.ico")
 
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
 
 	rest := v1.Group("/rest")
+	rest.Static("/public", "./public")
+	rest.StaticFile("/favicon.ico", "./public/favicon.ico")
 
 	rest.Use(middlewares.AuthMiddleware().MiddlewareFunc())
 
