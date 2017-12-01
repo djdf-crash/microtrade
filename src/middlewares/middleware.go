@@ -1,11 +1,9 @@
 package middlewares
 
 import (
-	"time"
-
 	"db"
-
 	"io/ioutil"
+	"time"
 
 	"github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
@@ -28,24 +26,14 @@ func initKeys() {
 func AuthMiddleware() *jwt.GinJWTMiddleware {
 
 	AuthMiddleware := &jwt.GinJWTMiddleware{
-		Realm:         "test zone",
-		Key:           signBytes,
-		Timeout:       time.Hour,
-		MaxRefresh:    time.Hour,
-		Authenticator: Authenticator,
-		Authorizator: func(userId string, c *gin.Context) bool {
-			if userId == "admin" {
-				return true
-			}
-
-			return false
-		},
-		Unauthorized: func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{
-				"code":    code,
-				"message": message,
-			})
-		},
+		Realm:            "test zone",
+		SigningAlgorithm: "HS256",
+		Key:              signBytes,
+		Timeout:          time.Hour,
+		MaxRefresh:       time.Hour,
+		Authenticator:    Authenticator,
+		Authorizator:     Authorizator,
+		Unauthorized:     Unauthorized,
 		// TokenLookup is a string in the form of "<source>:<name>" that is used
 		// to extract token from the request.
 		// Optional. Default value "header:Authorization".
@@ -66,10 +54,11 @@ func AuthMiddleware() *jwt.GinJWTMiddleware {
 	return AuthMiddleware
 }
 
-func Authenticator(username string, password string, ctx *gin.Context) (userName string, ok bool) {
+func Authenticator(email string, password string, ctx *gin.Context) (userName string, ok bool) {
 
-	if username != "" || password != "" {
-		user := db.FindUserByName(username)
+	if email != "" || password != "" {
+
+		user := db.FindUserByName(email)
 
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 			return "", false
@@ -78,4 +67,28 @@ func Authenticator(username string, password string, ctx *gin.Context) (userName
 	}
 
 	return userName, true
+}
+
+func Authorizator(email string, ctx *gin.Context) bool {
+
+	//if email == "test" {
+	//	return true
+	//}
+
+	return true
+}
+
+func Unauthorized(ctx *gin.Context, code int, message string) {
+
+	//if mw.Realm == "" {
+	//	mw.Realm = "gin jwt"
+	//}
+	//
+	//ctx.Header("WWW-Authenticate", "JWT realm="+mw.Realm)
+	ctx.Abort()
+
+	ctx.JSON(code, gin.H{
+		"code":    code,
+		"message": message,
+	})
 }

@@ -1,13 +1,13 @@
 package db
 
 type UserJSON struct {
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type Users struct {
 	ID       uint
-	Username string
+	Email    string
 	Password string
 	IsAdmin  bool
 }

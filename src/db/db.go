@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/jinzhu/gorm"
@@ -19,6 +20,7 @@ func InitDB() error {
 
 	DB, err = gorm.Open("sqlite3", pathDB)
 	if err != nil {
+		log.Panic(err.Error())
 		return err
 	}
 
@@ -26,33 +28,40 @@ func InitDB() error {
 		DB.CreateTable(&Users{})
 	}
 
+	//DB.AutoMigrate(&Users{})
+
 	return nil
 }
 
-func FindUserByName(userName string) Users {
+func FindUserByName(email string) Users {
 	var user Users
 
-	DB.Where("username=?", userName).First(&user)
+	DB.Where("email=?", email).First(&user)
 
 	return user
 }
 
-func CheckUserByUserName(userName string) bool {
+func CheckUserByEmail(email string) bool {
 	var user Users
 
-	user = FindUserByName(userName)
+	user = FindUserByName(email)
 	if !reflect.DeepEqual(user, Users{}) {
 		return true
 	}
 	return false
 }
 
-func AddUser(user *Users) {
+func AddUser(user *Users) error {
 
-	//DB.NewRecord(user)
+	tx := DB.Begin()
 
-	DB.Create(&user)
-	//
-	//DB.Save(&user)
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
 
 }

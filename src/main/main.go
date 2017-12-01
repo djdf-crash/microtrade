@@ -7,7 +7,10 @@ import (
 
 	"db"
 
+	"validators"
+
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 func main() {
@@ -27,8 +30,9 @@ func main() {
 
 	router := gin.Default()
 
-	api := router.Group("/api")
-	v1 := api.Group("/v1")
+	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
+
+	v1 := router.Group("/api/v1")
 
 	rest := v1.Group("/rest")
 	rest.Static("/public", "./public")
@@ -38,14 +42,15 @@ func main() {
 
 	{
 		rest.POST("/logout", handlers.LogoutHandler)
+		rest.POST("/refreshToken", handlers.RefreshTokenHandler)
 	}
 
 	authGroup := v1.Group("/auth")
 
 	{
-		authGroup.POST("/login", middlewares.AuthMiddleware().LoginHandler)
+		authGroup.POST("/login", handlers.LoginHandler)
 		authGroup.POST("/register", handlers.RegisterHandler)
 	}
 
-	router.Run(":" + port) // listen and serve on 0.0.0.0:8080
+	router.Run(":" + port)
 }
