@@ -32,11 +32,13 @@ func main() {
 
 	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
 
+	router.Static("/", "./public/static")
+	router.StaticFile("/favicon.ico", "./public/favicon.ico")
+	router.StaticFile("/index.html", "./public/index.html")
+
 	v1 := router.Group("/api/v1")
 
 	rest := v1.Group("/rest")
-	rest.Static("/public", "./public")
-	rest.StaticFile("/favicon.ico", "./public/favicon.ico")
 
 	rest.Use(middlewares.AuthMiddleware().MiddlewareFunc())
 
