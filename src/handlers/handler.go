@@ -7,11 +7,8 @@ import (
 
 	"time"
 
-	"github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"golang.org/x/crypto/bcrypt"
-	jwtGO "gopkg.in/dgrijalva/jwt-go.v3"
 )
 
 type Register struct {
@@ -20,75 +17,22 @@ type Register struct {
 	ConfirmPassword string `json:"confirm_password" binding:"required"`
 }
 
-// Login form structure.
-type Login struct {
-	Email    string `json:"email" binding:"required,emailValidator"`
-	Password string `json:"password" binding:"required"`
+type ResponseMessage struct {
+	Error Message
 }
 
-type ResponseMessage struct {
+type Message struct {
 	Code    int
 	Message string
 }
 
 func LoginHandler(ctx *gin.Context) {
-	gwtMiddleware := middlewares.AuthMiddleware()
-	initLogin(ctx, gwtMiddleware)
-}
-
-func initLogin(c *gin.Context, mw *jwt.GinJWTMiddleware) {
-	// Initial middleware default setting.
-	mw.MiddlewareInit()
-
-	var loginVals Login
-
-	if c.ShouldBindWith(&loginVals, binding.JSON) != nil {
-		mw.Unauthorized(c, http.StatusBadRequest, "Missing Username or Password")
-		return
-	}
-
-	if mw.Authenticator == nil {
-		mw.Unauthorized(c, http.StatusInternalServerError, "Missing define authenticator func")
-		return
-	}
-
-	userID, ok := mw.Authenticator(loginVals.Email, loginVals.Password, c)
-
-	if !ok {
-		mw.Unauthorized(c, http.StatusUnauthorized, "Incorrect Username / Password")
-		return
-	}
-
-	// Create the token
-	token := jwtGO.New(jwtGO.GetSigningMethod(mw.SigningAlgorithm))
-	claims := token.Claims.(jwtGO.MapClaims)
-
-	if mw.PayloadFunc != nil {
-		for key, value := range mw.PayloadFunc(loginVals.Email) {
-			claims[key] = value
-		}
-	}
-
-	if userID == "" {
-		userID = loginVals.Email
-	}
-
-	expire := mw.TimeFunc().Add(mw.Timeout)
-	claims["id"] = userID
-	claims["exp"] = expire.Unix()
-	claims["orig_iat"] = mw.TimeFunc().Unix()
-
-	tokenString, err := token.SignedString(mw.Key)
-
+	tokenString, expire, err := middlewares.AuthMiddleware.LoginHandler(ctx)
 	if err != nil {
-		mw.Unauthorized(c, http.StatusUnauthorized, "Create JWT Token faild")
+		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"token":  tokenString,
-		"expire": expire.Format(time.RFC3339),
-	})
+	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
 }
 
 func LogoutHandler(ctx *gin.Context) {
@@ -101,7 +45,8 @@ func RegisterHandler(ctx *gin.Context) {
 }
 func registerUser(ctx *gin.Context) {
 	var userRegister Register
-	var user db.Users
+	var user db.User
+	var token db.Token
 
 	if err := ctx.ShouldBindJSON(&userRegister); err == nil {
 		if userRegister.Password != userRegister.ConfirmPassword {
@@ -119,10 +64,17 @@ func registerUser(ctx *gin.Context) {
 			user.Email = userRegister.Email
 			user.Password = string(hash)
 
+			jwtToken, expire, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
+
+			token.Token = jwtToken
+			token.Expire = expire.Unix()
+
+			user.Tokens = append(user.Tokens, token)
+
 			if err := db.AddUser(&user); err != nil {
 				respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 			} else {
-				respondWithMessage(http.StatusCreated, "User registered", ctx)
+				respondWithMessage(http.StatusCreated, "token:"+jwtToken+"; expire:"+expire.Format(time.RFC3339), ctx)
 			}
 		} else {
 			respondWithMessage(http.StatusBadRequest, "User name is exist", ctx)
@@ -136,14 +88,15 @@ func registerUser(ctx *gin.Context) {
 }
 
 func RefreshTokenHandler(ctx *gin.Context) {
-	gwtMiddleware := middlewares.AuthMiddleware()
-	gwtMiddleware.RefreshHandler(ctx)
+	middlewares.AuthMiddleware.RefreshHandler(ctx)
 }
 
 func respondWithMessage(code int, message string, ctx *gin.Context) {
 	response := ResponseMessage{
-		code,
-		message,
+		Message{
+			code,
+			message,
+		},
 	}
 
 	ctx.JSON(code, &response)

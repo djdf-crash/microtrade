@@ -38,7 +38,7 @@ func main() {
 
 	rest := v1.Group("/rest")
 
-	rest.Use(middlewares.AuthMiddleware().MiddlewareFunc())
+	rest.Use(middlewares.AuthMiddleware.MiddlewareFunc())
 
 	{
 		rest.POST("/logout", handlers.LogoutHandler)

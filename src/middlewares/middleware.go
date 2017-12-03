@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,44 +13,37 @@ var (
 	signBytes []byte
 )
 
-func init() {
-	initKeys()
+var AuthMiddleware = &GinJWTMiddleware{
+	Realm:            "test zone",
+	SigningAlgorithm: "HS256",
+	Key:              initKeys(),
+	Timeout:          time.Hour,
+	MaxRefresh:       time.Hour,
+	Authenticator:    Authenticator,
+	Authorizator:     Authorizator,
+	Unauthorized:     Unauthorized,
+	// TokenLookup is a string in the form of "<source>:<name>" that is used
+	// to extract token from the request.
+	// Optional. Default value "header:Authorization".
+	// Possible values:
+	// - "header:<name>"
+	// - "query:<name>"
+	// - "cookie:<name>"
+	TokenLookup: "header:Authorization",
+	// TokenLookup: "query:token",
+	// TokenLookup: "cookie:token",
+
+	// TokenHeadName is a string in the header. Default value is "Bearer"
+	TokenHeadName: "Bearer",
+
+	// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
+	TimeFunc: time.Now,
 }
 
-func initKeys() {
+func initKeys() []byte {
 	signBytes, _ = ioutil.ReadFile("./keys/secret.rsa")
+	return signBytes
 
-}
-
-func AuthMiddleware() *jwt.GinJWTMiddleware {
-
-	AuthMiddleware := &jwt.GinJWTMiddleware{
-		Realm:            "test zone",
-		SigningAlgorithm: "HS256",
-		Key:              signBytes,
-		Timeout:          time.Hour,
-		MaxRefresh:       time.Hour,
-		Authenticator:    Authenticator,
-		Authorizator:     Authorizator,
-		Unauthorized:     Unauthorized,
-		// TokenLookup is a string in the form of "<source>:<name>" that is used
-		// to extract token from the request.
-		// Optional. Default value "header:Authorization".
-		// Possible values:
-		// - "header:<name>"
-		// - "query:<name>"
-		// - "cookie:<name>"
-		TokenLookup: "header:Authorization",
-		// TokenLookup: "query:token",
-		// TokenLookup: "cookie:token",
-
-		// TokenHeadName is a string in the header. Default value is "Bearer"
-		TokenHeadName: "Bearer",
-
-		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
-		TimeFunc: time.Now,
-	}
-	return AuthMiddleware
 }
 
 func Authenticator(email string, password string, ctx *gin.Context) (userName string, ok bool) {

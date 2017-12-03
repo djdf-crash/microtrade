@@ -2,12 +2,6 @@
 	"version": 0,
 	"dependencies": [
 		{
-			"importpath": "github.com/appleboy/gin-jwt",
-			"repository": "https://github.com/appleboy/gin-jwt",
-			"revision": "4ef6a7a1574ad9f81f6ba45c4b74945f62e39a21",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/constabulary/gb/testdata",
 			"repository": "https://github.com/constabulary/gb",
 			"revision": "f11784c79acf8d0c0a516774585aed66dc0dc439",

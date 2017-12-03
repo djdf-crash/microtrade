@@ -24,17 +24,26 @@ func InitDB() error {
 		return err
 	}
 
-	if !DB.HasTable(&Users{}) {
-		DB.CreateTable(&Users{})
-	}
+	DB.SingularTable(true)
+	//if !DB.HasTable(&Users{}) {
+	//	DB.CreateTable(&Users{})
+	//}
+	//
+	//if !DB.HasTable(&Tokens{}) {
+	//	DB.CreateTable(&Tokens{})
+	//}
+	//
+	//if !DB.HasTable(&UsersToken{}) {
+	//	DB.CreateTable(&UsersToken{})
+	//}
 
-	//DB.AutoMigrate(&Users{})
+	DB.AutoMigrate(&User{}, &Token{})
 
 	return nil
 }
 
-func FindUserByName(email string) Users {
-	var user Users
+func FindUserByName(email string) User {
+	var user User
 
 	DB.Where("email=?", email).First(&user)
 
@@ -42,16 +51,16 @@ func FindUserByName(email string) Users {
 }
 
 func CheckUserByEmail(email string) bool {
-	var user Users
+	var user User
 
 	user = FindUserByName(email)
-	if !reflect.DeepEqual(user, Users{}) {
+	if !reflect.DeepEqual(user, User{}) {
 		return true
 	}
 	return false
 }
 
-func AddUser(user *Users) error {
+func AddUser(user *User) error {
 
 	tx := DB.Begin()
 
