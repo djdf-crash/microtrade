@@ -17,6 +17,12 @@ type Register struct {
 	ConfirmPassword string `json:"confirm_password" binding:"required"`
 }
 
+type ChangePasswordReq struct {
+	Email       string `json:"email" binding:"required,emailValidator"`
+	Password    string `json:"password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
 type ResponseMessage struct {
 	Error Message
 }
@@ -35,6 +41,38 @@ func LoginHandler(ctx *gin.Context) {
 	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
 }
 
+func ChangePasswordHandler(ctx *gin.Context) {
+	changePasswordUser(ctx)
+}
+func changePasswordUser(ctx *gin.Context) {
+	var changePassword ChangePasswordReq
+
+	if err := ctx.ShouldBindJSON(&changePassword); err == nil {
+
+		user := db.FindUserByName(changePassword.Email)
+
+		if changePassword.NewPassword == "" {
+			respondWithMessage(http.StatusBadRequest, "New password is empty", ctx)
+			return
+		}
+
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePassword.Password)); err != nil {
+			respondWithMessage(http.StatusBadRequest, "Password is not correctly", ctx)
+			return
+		}
+
+		newHash, _ := bcrypt.GenerateFromPassword([]byte(changePassword.NewPassword), bcrypt.DefaultCost)
+
+		user.Password = string(newHash)
+
+		db.UpdateUser(&user)
+
+	} else {
+		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		return
+	}
+}
+
 func LogoutHandler(ctx *gin.Context) {
 	resp := map[string]string{"Logout": "OK"}
 	ctx.JSON(http.StatusOK, resp)
@@ -46,7 +84,6 @@ func RegisterHandler(ctx *gin.Context) {
 func registerUser(ctx *gin.Context) {
 	var userRegister Register
 	var user db.User
-	var token db.Token
 
 	if err := ctx.ShouldBindJSON(&userRegister); err == nil {
 		if userRegister.Password != userRegister.ConfirmPassword {
@@ -64,16 +101,12 @@ func registerUser(ctx *gin.Context) {
 			user.Email = userRegister.Email
 			user.Password = string(hash)
 
-			jwtToken, expire, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
-
-			token.Token = jwtToken
-			token.Expire = expire.Unix()
-
-			user.Tokens = append(user.Tokens, token)
-
 			if err := db.AddUser(&user); err != nil {
 				respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 			} else {
+
+				jwtToken, expire, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
+
 				respondWithMessage(http.StatusCreated, "token:"+jwtToken+"; expire:"+expire.Format(time.RFC3339), ctx)
 			}
 		} else {

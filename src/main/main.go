@@ -41,6 +41,7 @@ func main() {
 	rest.Use(middlewares.AuthMiddleware.MiddlewareFunc())
 
 	{
+		rest.POST("/password/change", handlers.ChangePasswordHandler)
 		rest.POST("/logout", handlers.LogoutHandler)
 		rest.POST("/refreshToken", handlers.RefreshTokenHandler)
 	}

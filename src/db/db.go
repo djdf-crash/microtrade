@@ -25,19 +25,8 @@ func InitDB() error {
 	}
 
 	DB.SingularTable(true)
-	//if !DB.HasTable(&Users{}) {
-	//	DB.CreateTable(&Users{})
-	//}
-	//
-	//if !DB.HasTable(&Tokens{}) {
-	//	DB.CreateTable(&Tokens{})
-	//}
-	//
-	//if !DB.HasTable(&UsersToken{}) {
-	//	DB.CreateTable(&UsersToken{})
-	//}
 
-	DB.AutoMigrate(&User{}, &Token{})
+	DB.AutoMigrate(&User{})
 
 	return nil
 }
@@ -65,6 +54,21 @@ func AddUser(user *User) error {
 	tx := DB.Begin()
 
 	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+
+}
+
+func UpdateUser(user *User) error {
+
+	tx := DB.Begin()
+
+	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -21,6 +21,7 @@ var AuthMiddleware = &GinJWTMiddleware{
 	MaxRefresh:       time.Hour,
 	Authenticator:    Authenticator,
 	Authorizator:     Authorizator,
+	PayloadFunc:      PayloadFunc,
 	Unauthorized:     Unauthorized,
 	// TokenLookup is a string in the form of "<source>:<name>" that is used
 	// to extract token from the request.
@@ -68,6 +69,13 @@ func Authorizator(email string, ctx *gin.Context) bool {
 	//}
 
 	return true
+}
+
+func PayloadFunc(userID string) map[string]interface{} {
+	user := db.FindUserByName(userID)
+	return map[string]interface{}{
+		"hash": user.Password,
+	}
 }
 
 func Unauthorized(ctx *gin.Context, code int, message string) {

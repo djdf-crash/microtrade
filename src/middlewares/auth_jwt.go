@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"gopkg.in/dgrijalva/jwt-go.v3"
@@ -167,6 +169,12 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	c.Set("JWT_PAYLOAD", claims)
 	c.Set("userID", id)
 
+	user := db.FindUserByName(id)
+	if claims["hash"].(string) != user.Password {
+		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
+		return
+	}
+
 	if !mw.Authorizator(id, c) {
 		mw.unauthorized(c, http.StatusForbidden, "You don't have permission to access.")
 		return
@@ -239,6 +247,12 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 
 	if origIat < mw.TimeFunc().Add(-mw.MaxRefresh).Unix() {
 		mw.unauthorized(c, http.StatusUnauthorized, "Token is expired.")
+		return
+	}
+
+	user := db.FindUserByName(claims["id"].(string))
+	if claims["hash"].(string) != user.Password {
+		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
 		return
 	}
 
