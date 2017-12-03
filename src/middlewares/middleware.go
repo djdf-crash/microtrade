@@ -64,15 +64,13 @@ func Authenticator(email string, password string, ctx *gin.Context) (userName st
 
 func Authorizator(email string, ctx *gin.Context) bool {
 
-	//if email == "test" {
-	//	return true
-	//}
-
 	return true
 }
 
 func PayloadFunc(userID string) map[string]interface{} {
+
 	user := db.FindUserByName(userID)
+
 	return map[string]interface{}{
 		"hash": user.Password,
 	}
