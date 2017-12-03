@@ -32,9 +32,7 @@ func main() {
 
 	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
 
-	router.Static("/", "./public/static")
-	router.StaticFile("/favicon.ico", "./public/favicon.ico")
-	router.StaticFile("/index.html", "./public/index.html")
+	router.Static("/", "./public/")
 
 	v1 := router.Group("/api/v1")
 

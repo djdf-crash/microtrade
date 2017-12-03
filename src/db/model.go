@@ -1,9 +1,9 @@
 package db
 
-type UserJSON struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
+//type UserJSON struct {
+//	Email    string `json:"email"`
+//	Password string `json:"password"`
+//}
 
 type Users struct {
 	ID       uint
