@@ -1,5 +1,5 @@
 <h1>Schema config file</h1>
-*******************************
+### JSON Schema
 ```json
 {
   "definitions": {},
