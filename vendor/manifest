@@ -17,7 +17,7 @@
 		{
 			"importpath": "github.com/denisenkom/go-mssqldb",
 			"repository": "https://github.com/denisenkom/go-mssqldb",
-			"revision": "88555645b640cc621e32f8693d7586a1aa1575f4",
+			"revision": "8a15d1bb0c8eaa4b870c016b312de5b50b493b4e",
 			"branch": "master"
 		},
 		{
@@ -27,9 +27,21 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/elazarl/go-bindata-assetfs",
+			"repository": "https://github.com/elazarl/go-bindata-assetfs",
+			"revision": "30f82fa23fd844bd5bb1e5f216db87fd77b5eb43",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/gin-contrib/sse",
 			"repository": "https://github.com/gin-contrib/sse",
 			"revision": "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gin-contrib/static",
+			"repository": "https://github.com/gin-contrib/static",
+			"revision": "e6b7eb92648d0a5faeea81700668a7a5dbe8424f",
 			"branch": "master"
 		},
 		{
@@ -41,13 +53,13 @@
 		{
 			"importpath": "github.com/gin-gonic/gin",
 			"repository": "https://github.com/gin-gonic/gin",
-			"revision": "eeb57848cac06c360a3c262837394051018b8f66",
+			"revision": "9e895470ddd40a45f28dbe4e96bfb5e893d54f9e",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/go-sql-driver/mysql",
 			"repository": "https://github.com/go-sql-driver/mysql",
-			"revision": "cd4cb909ce1a31435164be29bf3682031f61539a",
+			"revision": "9181e3a86a19bacd63e68d43ae8b7b36320d8092",
 			"branch": "master"
 		},
 		{
@@ -102,21 +114,21 @@
 		{
 			"importpath": "github.com/ugorji/go/codec",
 			"repository": "https://github.com/ugorji/go",
-			"revision": "84cb69a8af8316eed8cf4a3c9368a56977850062",
+			"revision": "f0aa215a7d653544d39d0e27dfa10fa4b183f397",
 			"branch": "master",
 			"path": "/codec"
 		},
 		{
 			"importpath": "golang.org/x/crypto/acme",
 			"repository": "https://go.googlesource.com/crypto",
-			"revision": "b080dc9a8c480b08e698fb1219160d598526310f",
+			"revision": "94eea52f7b742c7cbe0b03b22f0c4c8631ece122",
 			"branch": "master",
 			"path": "/acme"
 		},
 		{
 			"importpath": "golang.org/x/crypto/acme/autocert",
 			"repository": "https://go.googlesource.com/crypto",
-			"revision": "b080dc9a8c480b08e698fb1219160d598526310f",
+			"revision": "94eea52f7b742c7cbe0b03b22f0c4c8631ece122",
 			"branch": "master",
 			"path": "/acme/autocert"
 		},
@@ -137,7 +149,7 @@
 		{
 			"importpath": "golang.org/x/crypto/md4",
 			"repository": "https://go.googlesource.com/crypto",
-			"revision": "b080dc9a8c480b08e698fb1219160d598526310f",
+			"revision": "94eea52f7b742c7cbe0b03b22f0c4c8631ece122",
 			"branch": "master",
 			"path": "/md4"
 		},
@@ -151,7 +163,7 @@
 		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
-			"revision": "c7086645de248775cbf2373cf5ca4d2fa664b8c1",
+			"revision": "a8b9294777976932365dabb6640cf1468d95c70f",
 			"branch": "master",
 			"path": "/context"
 		},
@@ -165,7 +177,7 @@
 		{
 			"importpath": "golang.org/x/sys/unix",
 			"repository": "https://go.googlesource.com/sys",
-			"revision": "13fcbd661c8ececa8807a29b48407d674b1d8ed8",
+			"revision": "8b4580aae2a0dd0c231a45d3ccb8434ff533b840",
 			"branch": "master",
 			"path": "/unix"
 		},

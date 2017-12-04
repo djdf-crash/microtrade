@@ -10,6 +10,7 @@ import (
 	"config"
 	"log"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )
@@ -32,7 +33,7 @@ func main() {
 
 	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
 
-	router.Static("/static", "./public/")
+	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 
 	router.GET("/token/:token", handlers.ConfirmPasswordReqHandler)
 
