@@ -71,5 +71,19 @@ Here are JSON Schema.
 
 ```json
 
+{
+"mode_start": "release", //start mode "debug" or "release"
+"port": ":8080", // start on port
+"send_email":{
+"server":"smtp.gmail.com", //server smtp
+"port":":587", //port smtp
+"sender":"user email sender",
+"password_sender":"password"
+},
+"data_base":{
+"name_driver":"sqlite3", //driver DB "sqlite3" or "MySql" or etc.
+"path":"path" //path driver sqlite3 "./dadabase.db" or MySql "user:password@/dbname"
+}
+}
 
 ```
