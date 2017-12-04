@@ -1,5 +1,6 @@
 <h1>Schema config file</h1>
 *******************************
+```json
  1 {
  2   "definitions": {}, 
  3   "$schema": "http://json-schema.org/draft-06/schema#", 
@@ -61,3 +62,4 @@
 59     "data_base"
 60   ]
 61 }
+```
