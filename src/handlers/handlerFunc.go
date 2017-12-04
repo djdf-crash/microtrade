@@ -10,6 +10,8 @@ import (
 
 	"errors"
 
+	"config"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,10 +27,11 @@ func resetPasswordReq(ctx *gin.Context) {
 		}
 
 		tokenReset := utils.NewToken(resetPassword.Email, 24*time.Hour, hashPassword, middlewares.AuthMiddleware.Key)
-		fullPath := "http://localhost:8080/token/" + tokenReset
+		fullPath := "http://localhost" + config.AppConfig.Port + "/token/" + tokenReset
 
 		bodyMessage := "Please click " + fullPath + " for reset you password"
-		err = utils.SendEmail("smtp.gmail.com", ":587", "djdf.crash@gmail.com", "", resetPassword.Email, bodyMessage)
+		err = utils.SendEmail(config.AppConfig.SendEmail.Server, config.AppConfig.SendEmail.Port, config.AppConfig.SendEmail.Sender,
+			config.AppConfig.SendEmail.PasswordSender, resetPassword.Email, bodyMessage)
 		if err != nil {
 			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 			return

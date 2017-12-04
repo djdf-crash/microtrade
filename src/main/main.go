@@ -1,13 +1,14 @@
 package main
 
 import (
+	"db"
 	"handlers"
 	"middlewares"
-	"os"
-
-	"db"
 
 	"validators"
+
+	"config"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -15,18 +16,17 @@ import (
 
 func main() {
 
-	port := "8080"
+	err := config.InitConfig("./config.json")
+	if err != nil {
+		log.Panic(err.Error())
+	}
 
 	db.InitDB()
 	defer db.DB.Close()
 
-	ginMode := os.Getenv("GIN_MODE")
-	if ginMode != "" {
-		gin.SetMode(ginMode)
-		if ginMode == "release" {
-			port = "80"
-		}
-	}
+	port := config.AppConfig.Port
+
+	gin.SetMode(config.AppConfig.ModeStart)
 
 	router := gin.Default()
 
@@ -58,5 +58,5 @@ func main() {
 		passwordGroup.POST("/reset", handlers.ResetPasswordReqHandler)
 	}
 
-	router.Run(":" + port)
+	router.Run(port)
 }

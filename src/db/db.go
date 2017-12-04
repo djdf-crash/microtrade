@@ -4,12 +4,10 @@ import (
 	"log"
 	"reflect"
 
+	"config"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-)
-
-const (
-	pathDB = "./microtrade.db3"
 )
 
 var DB *gorm.DB
@@ -18,7 +16,9 @@ func InitDB() error {
 
 	var err error
 
-	DB, err = gorm.Open("sqlite3", pathDB)
+	dataBaseConfig := config.AppConfig.DataBase
+
+	DB, err = gorm.Open(dataBaseConfig.NameDriver, dataBaseConfig.Path)
 	if err != nil {
 		log.Panic(err.Error())
 		return err
