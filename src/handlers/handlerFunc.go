@@ -27,7 +27,7 @@ func resetPasswordReq(ctx *gin.Context) {
 		fullPath := "http://localhost:8080/token/" + tokenReset
 
 		bodyMessage := "Please click " + fullPath + " for reset you password"
-		err = utils.SendEmail("smtp.gmail.com", ":587", "djdf.crash@gmail.com", "chornobil1986", resetPassword.Email, bodyMessage)
+		err = utils.SendEmail("smtp.gmail.com", ":587", "djdf.crash@gmail.com", "", resetPassword.Email, bodyMessage)
 		if err != nil {
 			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 			return
