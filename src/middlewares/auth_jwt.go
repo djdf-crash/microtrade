@@ -8,8 +8,11 @@ import (
 
 	"db"
 
+	"crypto/md5"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/dgrijalva/jwt-go.v3"
 )
 
@@ -170,7 +173,11 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	c.Set("userID", id)
 
 	user := db.FindUserByName(id)
-	if claims["hash"].(string) != user.Password {
+
+	md5 := md5.New()
+	newHash := string(md5.Sum([]byte(user.Password)))
+
+	if !strings.EqualFold(claims["hash"].(string), newHash) {
 		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
 		return
 	}
@@ -208,15 +215,15 @@ func (mw *GinJWTMiddleware) LoginHandler(c *gin.Context) (string, time.Time, err
 		return "", time.Time{}, errors.New("Incorrect Username / Password")
 	}
 
-	// Create the token
-	token := jwt.New(jwt.GetSigningMethod(mw.SigningAlgorithm))
-	claims := token.Claims.(jwt.MapClaims)
-
-	if mw.PayloadFunc != nil {
-		for key, value := range mw.PayloadFunc(loginVals.Email) {
-			claims[key] = value
-		}
-	}
+	//// Create the token
+	//token := jwt.New(jwt.GetSigningMethod(mw.SigningAlgorithm))
+	//claims := token.Claims.(jwt.MapClaims)
+	//
+	//if mw.PayloadFunc != nil {
+	//	for key, value := range mw.PayloadFunc(loginVals.Email) {
+	//		claims[key] = value
+	//	}
+	//}
 
 	if userID == "" {
 		userID = loginVals.Email
@@ -251,7 +258,8 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 	}
 
 	user := db.FindUserByName(claims["id"].(string))
-	if claims["hash"].(string) != user.Password {
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(claims["hash"].(string))); err != nil {
 		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
 		return
 	}

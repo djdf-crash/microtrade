@@ -39,14 +39,14 @@ func FindUserByName(email string) User {
 	return user
 }
 
-func CheckUserByEmail(email string) bool {
+func CheckUserByEmail(email string) (User, bool) {
 	var user User
 
 	user = FindUserByName(email)
 	if !reflect.DeepEqual(user, User{}) {
-		return true
+		return user, true
 	}
-	return false
+	return User{}, false
 }
 
 func AddUser(user *User) error {

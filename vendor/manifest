@@ -9,6 +9,12 @@
 			"path": "/testdata"
 		},
 		{
+			"importpath": "github.com/dchest/authcookie",
+			"repository": "https://github.com/dchest/authcookie",
+			"revision": "fbdef6e998665bcb27a2227f39d840dbfc62a918",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/denisenkom/go-mssqldb",
 			"repository": "https://github.com/denisenkom/go-mssqldb",
 			"revision": "88555645b640cc621e32f8693d7586a1aa1575f4",

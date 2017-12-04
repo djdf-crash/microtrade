@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	md52 "crypto/md5"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -64,15 +66,17 @@ func Authenticator(email string, password string, ctx *gin.Context) (userName st
 
 func Authorizator(email string, ctx *gin.Context) bool {
 
+	//ctx.Request.URL.Path
 	return true
 }
 
 func PayloadFunc(userID string) map[string]interface{} {
 
 	user := db.FindUserByName(userID)
-
+	md5 := md52.New()
+	newHash := string(md5.Sum([]byte(user.Password)))
 	return map[string]interface{}{
-		"hash": user.Password,
+		"hash": newHash,
 	}
 }
 

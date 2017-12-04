@@ -6,16 +6,76 @@ import (
 	"net/http"
 	"time"
 
+	"utils"
+
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func resetPasswordReq(ctx *gin.Context) {
+	var resetPassword ResetPasswordReq
+
+	if err := ctx.ShouldBindJSON(&resetPassword); err == nil {
+		hashPassword, err := getPasswordHash(resetPassword.Email)
+		if err != nil {
+			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+			return
+		}
+
+		tokenReset := utils.NewToken(resetPassword.Email, 24*time.Hour, hashPassword, middlewares.AuthMiddleware.Key)
+		fullPath := "http://localhost:8080/token/" + tokenReset
+
+		bodyMessage := "Please click " + fullPath + " for reset you password"
+		err = utils.SendEmail("smtp.gmail.com", ":587", "djdf.crash@gmail.com", "chornobil1986", resetPassword.Email, bodyMessage)
+		if err != nil {
+			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+			return
+		}
+
+		respondWithMessage(http.StatusBadRequest, "Message send for email "+resetPassword.Email, ctx)
+
+	} else {
+		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+	}
+}
+
+func confirmPasswordReq(ctx *gin.Context) {
+	token := ctx.Param("token")
+	if token == "" {
+		respondWithMessage(http.StatusBadRequest, "Invalid token", ctx)
+	}
+
+	login, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
+	if err != nil {
+		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		return
+	}
+
+	respondWithMessage(http.StatusOK, "login:"+login, ctx)
+}
+
+func getPasswordHash(login string) ([]byte, error) {
+	user, ok := db.CheckUserByEmail(login)
+	if !ok {
+		return nil, errors.New("User " + login + " not found")
+	}
+
+	return []byte(user.Password), nil
+}
 
 func changePasswordUser(ctx *gin.Context) {
 	var changePassword ChangePasswordReq
 
 	if err := ctx.ShouldBindJSON(&changePassword); err == nil {
 
-		user := db.FindUserByName(changePassword.Email)
+		userEmail := ctx.GetString("userID")
+		if userEmail == "" {
+			respondWithMessage(http.StatusBadRequest, "User not found", ctx)
+			return
+		}
+
+		user := db.FindUserByName(userEmail)
 
 		if changePassword.NewPassword == "" {
 			respondWithMessage(http.StatusBadRequest, "New password is empty", ctx)
@@ -35,8 +95,9 @@ func changePasswordUser(ctx *gin.Context) {
 
 	} else {
 		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
-		return
 	}
+
+	respondWithMessage(http.StatusOK, "Successful", ctx)
 }
 
 func registerUser(ctx *gin.Context) {
@@ -49,7 +110,7 @@ func registerUser(ctx *gin.Context) {
 			return
 		}
 
-		if !db.CheckUserByEmail(userRegister.Email) {
+		if _, ok := db.CheckUserByEmail(userRegister.Email); !ok {
 
 			hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
 			if err != nil {

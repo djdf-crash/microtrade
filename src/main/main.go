@@ -32,14 +32,15 @@ func main() {
 
 	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
 
-	router.Static("/", "./public/")
+	router.Static("/static", "./public/")
+
+	router.GET("/token/:token", handlers.ConfirmPasswordReqHandler)
 
 	v1 := router.Group("/api/v1")
 
 	rest := v1.Group("/rest")
 
 	rest.Use(middlewares.AuthMiddleware.MiddlewareFunc())
-
 	{
 		rest.POST("/password/change", handlers.ChangePasswordHandler)
 		rest.POST("/logout", handlers.LogoutHandler)
@@ -47,10 +48,14 @@ func main() {
 	}
 
 	authGroup := v1.Group("/auth")
-
 	{
 		authGroup.POST("/login", handlers.LoginHandler)
 		authGroup.POST("/register", handlers.RegisterHandler)
+	}
+
+	passwordGroup := authGroup.Group("/password")
+	{
+		passwordGroup.POST("/reset", handlers.ResetPasswordReqHandler)
 	}
 
 	router.Run(":" + port)

@@ -18,6 +18,14 @@ func LoginHandler(ctx *gin.Context) {
 	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
 }
 
+func ResetPasswordReqHandler(ctx *gin.Context) {
+	resetPasswordReq(ctx)
+}
+
+func ConfirmPasswordReqHandler(ctx *gin.Context) {
+	confirmPasswordReq(ctx)
+}
+
 func ChangePasswordHandler(ctx *gin.Context) {
 	changePasswordUser(ctx)
 }
