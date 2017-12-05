@@ -2,10 +2,10 @@
   "mode_start": "debug",
   "port": ":8080",
   "send_email":{
-    "server":"smtp.gmail.com",
+    "server":"smtp.example.com",
     "port":":587",
-    "sender":"djdf.crash@gmail.com",
-    "password_sender":"v.khaurdinov.google"
+    "sender":"test@examle.com",
+    "password_sender":"password"
   },
   "data_base":{
     "name_driver":"sqlite3",
