@@ -6,6 +6,7 @@ import (
 
 	"time"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,4 +42,8 @@ func RegisterHandler(ctx *gin.Context) {
 
 func RefreshTokenHandler(ctx *gin.Context) {
 	middlewares.AuthMiddleware.RefreshHandler(ctx)
+}
+
+func StaticHandler(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc {
+	return staticFilesGet(urlPrefix, fs)
 }

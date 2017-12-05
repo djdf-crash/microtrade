@@ -12,6 +12,7 @@ import (
 
 	"config"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -146,6 +147,24 @@ func registerUser(ctx *gin.Context) {
 		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 		return
 	}
+}
+
+func staticFilesGet(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc {
+
+	fileserver := http.FileServer(fs)
+	if urlPrefix != "" {
+		fileserver = http.StripPrefix(urlPrefix, fileserver)
+	}
+	return func(c *gin.Context) {
+		if fs.Exists(urlPrefix, c.Request.URL.Path) {
+			fileserver.ServeHTTP(c.Writer, c.Request)
+			if c.Request.URL.Path != "/" {
+				c.Writer.Header().Set("Cache-Control", "max-age=604800")
+			}
+			c.Abort()
+		}
+	}
+
 }
 
 func respondWithMessage(code int, message string, ctx *gin.Context) {

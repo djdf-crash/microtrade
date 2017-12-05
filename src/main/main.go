@@ -33,7 +33,7 @@ func main() {
 
 	binding.Validator.RegisterValidation("emailValidator", validators.EmailValidator)
 
-	router.Use(static.Serve("/", static.LocalFile("./public", true)))
+	router.Use(handlers.StaticHandler("/", static.LocalFile("./public", true)))
 
 	router.GET("/token/:token", handlers.ConfirmPasswordReqHandler)
 

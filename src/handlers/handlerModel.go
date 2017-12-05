@@ -16,10 +16,10 @@ type ResetPasswordReq struct {
 }
 
 type ResponseMessage struct {
-	Error Message
+	Error Message `json:"error"`
 }
 
 type Message struct {
-	Code    int
-	Message string
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
