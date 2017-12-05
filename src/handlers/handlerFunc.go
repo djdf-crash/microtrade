@@ -50,13 +50,14 @@ func confirmPasswordReq(ctx *gin.Context) {
 		respondWithMessage(http.StatusBadRequest, "Invalid token", ctx)
 	}
 
-	login, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
+	_, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
 	if err != nil {
 		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 		return
 	}
 
-	respondWithMessage(http.StatusOK, "login:"+login, ctx)
+	ctx.Redirect(http.StatusMovedPermanently, "/#/confirm/"+token)
+	//respondWithMessage(http.StatusOK, "login:"+login, ctx)
 }
 
 func getPasswordHash(login string) ([]byte, error) {
