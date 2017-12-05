@@ -61,9 +61,12 @@ func Authenticator(email string, password string, ctx *gin.Context) (userName st
 
 		user.LastLogin = time.Now()
 		db.UpdateUser(&user)
+
+		return userName, true
 	}
 
-	return userName, true
+	return "", false
+
 }
 
 func Authorizator(email string, ctx *gin.Context) bool {

@@ -12,6 +12,8 @@ import (
 
 	"config"
 
+	"strings"
+
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -172,7 +174,7 @@ func respondWithMessage(code int, message string, ctx *gin.Context) {
 	response := ResponseMessage{
 		Message{
 			code,
-			message,
+			strings.ToLower(message),
 		},
 	}
 
