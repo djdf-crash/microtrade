@@ -1,22 +1,14 @@
 package handlers
 
 import (
-	"middlewares"
 	"net/http"
-
-	"time"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
 func LoginHandler(ctx *gin.Context) {
-	tokenString, expire, err := middlewares.AuthMiddleware.LoginHandler(ctx)
-	if err != nil {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
-		return
-	}
-	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
+	loginReq(ctx)
 }
 
 func ResetPasswordReqHandler(ctx *gin.Context) {
@@ -41,7 +33,7 @@ func RegisterHandler(ctx *gin.Context) {
 }
 
 func RefreshTokenHandler(ctx *gin.Context) {
-	middlewares.AuthMiddleware.RefreshHandler(ctx)
+	refreshToken(ctx)
 }
 
 func StaticHandler(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc {

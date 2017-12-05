@@ -19,6 +19,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func loginReq(ctx *gin.Context) {
+	tokenString, expire, err := middlewares.AuthMiddleware.LoginHandler(ctx)
+	if err != nil {
+		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		return
+	}
+	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
+}
+
 func resetPasswordReq(ctx *gin.Context) {
 	var resetPassword ResetPasswordReq
 
@@ -151,6 +160,10 @@ func registerUser(ctx *gin.Context) {
 	}
 }
 
+func refreshToken(ctx *gin.Context) {
+	middlewares.AuthMiddleware.RefreshHandler(ctx)
+}
+
 func staticFilesGet(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc {
 
 	fileserver := http.FileServer(fs)
@@ -171,11 +184,9 @@ func staticFilesGet(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc
 
 func respondWithMessage(code int, message string, ctx *gin.Context) {
 
-	response := ResponseMessage{
-		Message{
-			code,
-			strings.ToLower(message),
-		},
+	response := map[string]interface{}{
+		"code":    code,
+		"message": strings.ToLower(message),
 	}
 
 	if ctx.Request.Method == http.MethodGet {

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	md52 "crypto/md5"
+	"crypto/md5"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -78,7 +78,7 @@ func Authorizator(email string, ctx *gin.Context) bool {
 func PayloadFunc(userID string) map[string]interface{} {
 
 	user := db.FindUserByName(userID)
-	md5 := md52.New()
+	md5 := md5.New()
 	newHash := string(md5.Sum([]byte(user.Password)))
 	return map[string]interface{}{
 		"hash": newHash,
@@ -94,8 +94,8 @@ func Unauthorized(ctx *gin.Context, code int, message string) {
 	//ctx.Header("WWW-Authenticate", "JWT realm="+mw.Realm)
 	ctx.Abort()
 
-	ctx.JSON(code, gin.H{
-		"code":    code,
-		"message": message,
-	})
+	//ctx.JSON(code, gin.H{
+	//	"code":    code,
+	//	"message": message,
+	//})
 }
