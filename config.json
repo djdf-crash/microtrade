@@ -1,0 +1,14 @@
+{
+  "mode_start": "debug",
+  "port": ":8080",
+  "send_email":{
+    "server":"smtp.example.com",
+    "port":":587",
+    "sender":"test@examle.com",
+    "password_sender":"password"
+  },
+  "data_base":{
+    "name_driver":"sqlite3",
+    "path":"./microtrade.db3"
+  }
+}
