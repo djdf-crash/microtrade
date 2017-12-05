@@ -20,7 +20,7 @@ func resetPasswordReq(ctx *gin.Context) {
 	var resetPassword ResetPasswordReq
 
 	if err := ctx.ShouldBindJSON(&resetPassword); err == nil {
-		hashPassword, err := getPasswordHash(resetPassword.Email)
+		hashPassword, _, err := getPasswordHash(resetPassword.Email)
 		if err != nil {
 			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
 			return
@@ -47,26 +47,28 @@ func resetPasswordReq(ctx *gin.Context) {
 func confirmPasswordReq(ctx *gin.Context) {
 	token := ctx.Param("token")
 	if token == "" {
-		respondWithMessage(http.StatusBadRequest, "Invalid token", ctx)
+		//respondWithMessage(http.StatusNotFound, "Invalid token", ctx)
+		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
 	}
 
 	_, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
 	if err != nil {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
+		//respondWithMessage(http.StatusNotFound, "", ctx)
 		return
 	}
 
-	ctx.Redirect(http.StatusMovedPermanently, "/#/confirm/"+token)
+	ctx.Redirect(http.StatusTemporaryRedirect, "/#/confirm/"+token)
 	//respondWithMessage(http.StatusOK, "login:"+login, ctx)
 }
 
-func getPasswordHash(login string) ([]byte, error) {
+func getPasswordHash(login string) ([]byte, time.Time, error) {
 	user, ok := db.CheckUserByEmail(login)
 	if !ok {
-		return nil, errors.New("User " + login + " not found")
+		return nil, time.Now(), errors.New("User " + login + " not found")
 	}
 
-	return []byte(user.Password), nil
+	return []byte(user.Password), user.LastLogin, nil
 }
 
 func changePasswordUser(ctx *gin.Context) {
@@ -95,6 +97,7 @@ func changePasswordUser(ctx *gin.Context) {
 		newHash, _ := bcrypt.GenerateFromPassword([]byte(changePassword.NewPassword), bcrypt.DefaultCost)
 
 		user.Password = string(newHash)
+		user.LastLogin = time.Now()
 
 		db.UpdateUser(&user)
 
@@ -124,6 +127,7 @@ func registerUser(ctx *gin.Context) {
 
 			user.Email = userRegister.Email
 			user.Password = string(hash)
+			user.LastLogin = time.Now()
 
 			if err := db.AddUser(&user); err != nil {
 				respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
@@ -145,6 +149,7 @@ func registerUser(ctx *gin.Context) {
 }
 
 func respondWithMessage(code int, message string, ctx *gin.Context) {
+
 	response := ResponseMessage{
 		Message{
 			code,
@@ -152,6 +157,11 @@ func respondWithMessage(code int, message string, ctx *gin.Context) {
 		},
 	}
 
-	ctx.JSON(code, &response)
+	if ctx.Request.Method == http.MethodGet {
+		ctx.Writer.WriteHeader(code)
+	} else {
+		ctx.JSON(code, &response)
+	}
+
 	ctx.Abort()
 }

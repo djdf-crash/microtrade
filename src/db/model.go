@@ -1,6 +1,10 @@
 package db
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 type User struct {
 	gorm.Model
@@ -8,6 +12,7 @@ type User struct {
 	Password     string
 	Admin        bool
 	EmailConfirm bool
+	LastLogin    time.Time
 	//Tokens   []Token `gorm:"ForeignKey:UserID"`
 }
 

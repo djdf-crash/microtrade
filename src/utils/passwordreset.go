@@ -132,7 +132,7 @@ func NewToken(login string, dur time.Duration, pwdval, secret []byte) string {
 // Function pwdvalFn must return the current password value for the login it
 // receives in arguments, or an error. If it returns an error, VerifyToken
 // returns the same error.
-func VerifyToken(token string, pwdvalFn func(string) ([]byte, error), secret []byte) (login string, err error) {
+func VerifyToken(token string, pwdvalFn func(string) ([]byte, time.Time, error), secret []byte) (login string, err error) {
 	blen := base64.URLEncoding.DecodedLen(len(token))
 	// Avoid allocation if the token is too short
 	if blen <= 4+32 {
@@ -153,17 +153,26 @@ func VerifyToken(token string, pwdvalFn func(string) ([]byte, error), secret []b
 	b = b[:blen]
 
 	data := b[:blen-32]
+	login = string(data[4:])
+
 	exp := time.Unix(int64(binary.BigEndian.Uint32(data[:4])), 0)
+	then := exp.Add(-24 * time.Hour)
 	if exp.Before(time.Now()) {
 		err = ErrExpiredToken
 		return
 	}
-	login = string(data[4:])
-	pwdval, err := pwdvalFn(login)
+	pwdval, lastLogin, err := pwdvalFn(login)
 	if err != nil {
 		login = ""
 		return
 	}
+
+	if then.Before(lastLogin) {
+		login = ""
+		err = ErrExpiredToken
+		return
+	}
+
 	sig := b[blen-32:]
 	sk := getUserSecretKey(pwdval, secret)
 	realSig := getSignature(data, sk)

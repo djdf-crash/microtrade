@@ -284,6 +284,10 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 		return
 	}
 
+	user.LastLogin = time.Now()
+
+	db.UpdateUser(&user)
+
 	c.JSON(http.StatusOK, gin.H{
 		"token":  tokenString,
 		"expire": expire.Format(time.RFC3339),
