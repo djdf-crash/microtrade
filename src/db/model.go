@@ -13,7 +13,7 @@ type User struct {
 	Admin        bool
 	EmailConfirm bool
 	LastLogin    time.Time
-	//Tokens   []Token `gorm:"ForeignKey:UserID"`
+	RefreshToken string
 }
 
 // set User's table name to be `profiles`

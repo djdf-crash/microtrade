@@ -93,9 +93,4 @@ func Unauthorized(ctx *gin.Context, code int, message string) {
 	//
 	//ctx.Header("WWW-Authenticate", "JWT realm="+mw.Realm)
 	ctx.Abort()
-
-	//ctx.JSON(code, gin.H{
-	//	"code":    code,
-	//	"message": message,
-	//})
 }

@@ -12,20 +12,21 @@ import (
 
 	"config"
 
-	"strings"
+	"fmt"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/go-playground/validator.v8"
 )
 
 func loginReq(ctx *gin.Context) {
-	tokenString, expire, err := middlewares.AuthMiddleware.LoginHandler(ctx)
+	tokenString, _, err := middlewares.AuthMiddleware.LoginHandler(ctx)
 	if err != nil {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		RespondWithMessage(http.StatusBadRequest, 201, fmt.Sprintf(utils.LoginError[201], err.Error()), ctx)
 		return
 	}
-	respondWithMessage(http.StatusCreated, "token:"+tokenString+"; expire:"+expire.Format(time.RFC3339), ctx)
+	RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], tokenString), ctx)
 }
 
 func resetPasswordReq(ctx *gin.Context) {
@@ -34,7 +35,7 @@ func resetPasswordReq(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&resetPassword); err == nil {
 		hashPassword, _, err := getPasswordHash(resetPassword.Email)
 		if err != nil {
-			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+			RespondWithMessage(http.StatusBadRequest, 304, utils.PasswordResetRequestError[304], ctx)
 			return
 		}
 
@@ -45,33 +46,33 @@ func resetPasswordReq(ctx *gin.Context) {
 		err = utils.SendEmail(config.AppConfig.SendEmail.Server, config.AppConfig.SendEmail.Port, config.AppConfig.SendEmail.Sender,
 			config.AppConfig.SendEmail.PasswordSender, resetPassword.Email, bodyMessage)
 		if err != nil {
-			respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+			RespondWithMessage(http.StatusBadRequest, 302, utils.PasswordResetRequestError[302], ctx)
 			return
 		}
 
-		respondWithMessage(http.StatusBadRequest, "Message send for email "+resetPassword.Email, ctx)
+		RespondWithMessage(http.StatusBadRequest, 303, fmt.Sprintf(utils.PasswordResetRequestError[302], resetPassword.Email), ctx)
 
 	} else {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		checkErrors(err, ctx)
 	}
 }
 
 func confirmPasswordReq(ctx *gin.Context) {
 	token := ctx.Param("token")
 	if token == "" {
-		//respondWithMessage(http.StatusNotFound, "Invalid token", ctx)
+		//RespondWithMessage(http.StatusNotFound, "Invalid token", ctx)
 		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
 	}
 
 	_, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
 	if err != nil {
 		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
-		//respondWithMessage(http.StatusNotFound, "", ctx)
+		//RespondWithMessage(http.StatusNotFound, "", ctx)
 		return
 	}
 
 	ctx.Redirect(http.StatusTemporaryRedirect, "/#/confirm/"+token)
-	//respondWithMessage(http.StatusOK, "login:"+login, ctx)
+	//RespondWithMessage(http.StatusOK, "login:"+login, ctx)
 }
 
 func getPasswordHash(login string) ([]byte, time.Time, error) {
@@ -90,19 +91,19 @@ func changePasswordUser(ctx *gin.Context) {
 
 		userEmail := ctx.GetString("userID")
 		if userEmail == "" {
-			respondWithMessage(http.StatusBadRequest, "User not found", ctx)
+			RespondWithMessage(http.StatusBadRequest, 501, utils.PasswordChangeError[501], ctx)
+			return
+		}
+
+		if changePassword.NewPassword == "" {
+			RespondWithMessage(http.StatusBadRequest, 502, utils.PasswordChangeError[502], ctx)
 			return
 		}
 
 		user := db.FindUserByName(userEmail)
 
-		if changePassword.NewPassword == "" {
-			respondWithMessage(http.StatusBadRequest, "New password is empty", ctx)
-			return
-		}
-
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePassword.Password)); err != nil {
-			respondWithMessage(http.StatusBadRequest, "Password is not correctly", ctx)
+			RespondWithMessage(http.StatusBadRequest, 503, utils.PasswordChangeError[503], ctx)
 			return
 		}
 
@@ -113,11 +114,12 @@ func changePasswordUser(ctx *gin.Context) {
 
 		db.UpdateUser(&user)
 
+		RespondWithMessage(http.StatusOK, 200, "Successful", ctx)
+
 	} else {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+		checkErrors(err, ctx)
 	}
 
-	respondWithMessage(http.StatusOK, "Successful", ctx)
 }
 
 func registerUser(ctx *gin.Context) {
@@ -126,7 +128,7 @@ func registerUser(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&userRegister); err == nil {
 		if userRegister.Password != userRegister.ConfirmPassword {
-			respondWithMessage(http.StatusBadRequest, "Password and confirm password not equals", ctx)
+			RespondWithMessage(http.StatusBadRequest, 107, utils.UserRegisterError[107], ctx)
 			return
 		}
 
@@ -142,24 +144,23 @@ func registerUser(ctx *gin.Context) {
 			user.LastLogin = time.Now()
 
 			if err := db.AddUser(&user); err != nil {
-				respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
+				RespondWithMessage(http.StatusBadRequest, 108, utils.UserRegisterError[108], ctx)
 			} else {
 
-				jwtToken, expire, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
+				jwtToken, _, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
 
-				respondWithMessage(http.StatusCreated, "token:"+jwtToken+"; expire:"+expire.Format(time.RFC3339), ctx)
+				RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], jwtToken), ctx)
 			}
 		} else {
-			respondWithMessage(http.StatusBadRequest, "User name is exist", ctx)
+			RespondWithMessage(http.StatusBadRequest, 101, utils.UserRegisterError[101], ctx)
 			return
 		}
 
 	} else {
-		respondWithMessage(http.StatusBadRequest, err.Error(), ctx)
-		return
+
+		checkErrors(err, ctx)
 	}
 }
-
 func refreshToken(ctx *gin.Context) {
 	middlewares.AuthMiddleware.RefreshHandler(ctx)
 }
@@ -182,17 +183,48 @@ func staticFilesGet(urlPrefix string, fs static.ServeFileSystem) gin.HandlerFunc
 
 }
 
-func respondWithMessage(code int, message string, ctx *gin.Context) {
+func checkErrors(e interface{}, ctx *gin.Context) {
+	switch e.(type) {
+
+	case validator.ValidationErrors:
+		validatorErrors := e.(validator.ValidationErrors)
+		errorBindingValidation(validatorErrors, ctx)
+	default:
+		RespondWithMessage(http.StatusBadRequest, -2, utils.CommonError[-2], ctx)
+	}
+}
+
+func errorBindingValidation(validatorErrors validator.ValidationErrors, ctx *gin.Context) {
+	var mess string
+	var codeError int
+	for _, err := range validatorErrors {
+		switch err.Name {
+		case "Email":
+			codeError = 104
+			mess = utils.UserRegisterError[104]
+		case "Password":
+			codeError = 105
+			mess = utils.UserRegisterError[105]
+		case "ConfirmPassword":
+			codeError = 106
+			mess = utils.UserRegisterError[106]
+		}
+		break
+	}
+	RespondWithMessage(http.StatusBadRequest, codeError, mess, ctx)
+}
+
+func RespondWithMessage(codeResponse int, codeError int, message string, ctx *gin.Context) {
 
 	response := map[string]interface{}{
-		"code":    code,
-		"message": strings.ToLower(message),
+		"code":    codeError,
+		"message": message,
 	}
 
 	if ctx.Request.Method == http.MethodGet {
-		ctx.Writer.WriteHeader(code)
+		ctx.Writer.WriteHeader(codeResponse)
 	} else {
-		ctx.JSON(code, &response)
+		ctx.JSON(codeResponse, &response)
 	}
 
 	ctx.Abort()

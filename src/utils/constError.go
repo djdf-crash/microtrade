@@ -4,10 +4,25 @@ var UserRegisterError = map[int]string{
 	101: "User with this email is already exists",
 	102: "The password did not pass the complexity check or invalid",
 	103: "Device id contains invalid characters",
+	104: "Invalid validation on field Email",
+	105: "Invalid validation on field Password",
+	106: "Invalid validation on field Confirm password",
+	107: "Password and confirm password not equals",
+	108: "Server internal error",
+	109: "Token %s",
+}
+
+var LoginError = map[int]string{
+	201: "Error %s",
+	202: "Error parsing input JSON",
+	203: "Token invalid or expired",
 }
 
 var PasswordResetRequestError = map[int]string{
 	301: "User with such email not found",
+	302: "Server internal error",
+	303: "Message send for email %s",
+	304: "Token invalid or expired",
 }
 
 var PasswordResetConfirmationError = map[int]string{
@@ -15,9 +30,10 @@ var PasswordResetConfirmationError = map[int]string{
 	402: "Token for reset password is invalid",
 }
 
-var ChangeUserPasswordError = map[int]string{
-	601: "Current password is invalid",
-	602: "New password is invalid",
+var PasswordChangeError = map[int]string{
+	501: "User not found",
+	502: "New password is invalid",
+	503: "Current password is invalid",
 }
 
 var ValidationReqError = map[int]string{
