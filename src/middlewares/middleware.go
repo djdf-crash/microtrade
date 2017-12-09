@@ -85,12 +85,13 @@ func PayloadFunc(userID string) map[string]interface{} {
 	}
 }
 
-func Unauthorized(ctx *gin.Context, code int, message string) {
+func Unauthorized(ctx *gin.Context, codeHTTP int, codeERR int, message string) {
 
-	//if mw.Realm == "" {
-	//	mw.Realm = "gin jwt"
-	//}
-	//
-	//ctx.Header("WWW-Authenticate", "JWT realm="+mw.Realm)
+	response := map[string]interface{}{
+		"code":    codeERR,
+		"message": message,
+	}
+
+	ctx.JSON(codeHTTP, &response)
 	ctx.Abort()
 }

@@ -10,6 +10,8 @@ import (
 
 	"crypto/md5"
 
+	"utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"golang.org/x/crypto/bcrypt"
@@ -60,7 +62,7 @@ type GinJWTMiddleware struct {
 	PayloadFunc func(userID string) map[string]interface{}
 
 	// User can define own Unauthorized func.
-	Unauthorized func(*gin.Context, int, string)
+	Unauthorized func(*gin.Context, int, int, string)
 
 	// Set the identity handler function
 	IdentityHandler func(jwt.MapClaims) string
@@ -117,15 +119,6 @@ func (mw *GinJWTMiddleware) MiddlewareInit() error {
 		}
 	}
 
-	if mw.Unauthorized == nil {
-		mw.Unauthorized = func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{
-				"code":    code,
-				"message": message,
-			})
-		}
-	}
-
 	if mw.IdentityHandler == nil {
 		mw.IdentityHandler = func(claims jwt.MapClaims) string {
 			return claims["id"].(string)
@@ -147,7 +140,7 @@ func (mw *GinJWTMiddleware) MiddlewareInit() error {
 func (mw *GinJWTMiddleware) MiddlewareFunc() gin.HandlerFunc {
 	if err := mw.MiddlewareInit(); err != nil {
 		return func(c *gin.Context) {
-			mw.unauthorized(c, http.StatusInternalServerError, err.Error())
+			mw.unauthorized(c, http.StatusInternalServerError, 4, utils.ValidationReqError[4])
 			return
 		}
 	}
@@ -162,7 +155,7 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	token, err := mw.parseToken(c)
 
 	if err != nil {
-		mw.unauthorized(c, http.StatusUnauthorized, err.Error())
+		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
 		return
 	}
 
@@ -178,12 +171,12 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	newHash := string(md5.Sum([]byte(user.Password)))
 
 	if !strings.EqualFold(claims["hash"].(string), newHash) {
-		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
+		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
 		return
 	}
 
 	if !mw.Authorizator(id, c) {
-		mw.unauthorized(c, http.StatusForbidden, "You don't have permission to access.")
+		mw.unauthorized(c, http.StatusUnauthorized, -1, utils.CommonError[-1])
 		return
 	}
 
@@ -253,14 +246,14 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 	origIat := int64(claims["orig_iat"].(float64))
 
 	if origIat < mw.TimeFunc().Add(-mw.MaxRefresh).Unix() {
-		mw.unauthorized(c, http.StatusUnauthorized, "Token is expired.")
+		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
 		return
 	}
 
 	user := db.FindUserByName(claims["id"].(string))
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(claims["hash"].(string))); err != nil {
-		mw.unauthorized(c, http.StatusUnauthorized, "Token invalid!")
+		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
 		return
 	}
 
@@ -280,7 +273,7 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 	tokenString, err := newToken.SignedString(mw.Key)
 
 	if err != nil {
-		mw.unauthorized(c, http.StatusUnauthorized, "Create JWT Token faild")
+		mw.unauthorized(c, http.StatusUnauthorized, -4, utils.CommonError[-4])
 		return
 	}
 
@@ -394,7 +387,7 @@ func (mw *GinJWTMiddleware) parseToken(c *gin.Context) (*jwt.Token, error) {
 	})
 }
 
-func (mw *GinJWTMiddleware) unauthorized(c *gin.Context, code int, message string) {
+func (mw *GinJWTMiddleware) unauthorized(c *gin.Context, codeHTTP int, codeERR int, message string) {
 
 	if mw.Realm == "" {
 		mw.Realm = "gin jwt"
@@ -403,7 +396,7 @@ func (mw *GinJWTMiddleware) unauthorized(c *gin.Context, code int, message strin
 	c.Header("WWW-Authenticate", "JWT realm="+mw.Realm)
 	c.Abort()
 
-	mw.Unauthorized(c, code, message)
+	mw.Unauthorized(c, codeHTTP, codeERR, message)
 
 	return
 }

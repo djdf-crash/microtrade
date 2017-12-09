@@ -14,12 +14,3 @@ type ChangePasswordReq struct {
 type ResetPasswordReq struct {
 	Email string `json:"email" binding:"required,emailValidator"`
 }
-
-type ResponseMessage struct {
-	Error Message `json:"error"`
-}
-
-type Message struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}

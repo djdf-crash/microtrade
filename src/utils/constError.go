@@ -61,4 +61,5 @@ var CommonError = map[int]string{
 	-1: "Access Denied",
 	-2: "Error parsing input JSON",
 	-3: "Token invalid or expired",
+	-4: "Create JWT Token faild",
 }
