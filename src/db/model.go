@@ -13,7 +13,7 @@ type User struct {
 	Admin        bool
 	EmailConfirm bool
 	LastLogin    time.Time
-	RefreshToken string
+	RefreshToken string `gorm:"size:800"`
 }
 
 // set User's table name to be `profiles`
