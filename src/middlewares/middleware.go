@@ -7,6 +7,8 @@ import (
 
 	"crypto/md5"
 
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,12 +21,13 @@ var AuthMiddleware = &GinJWTMiddleware{
 	Realm:            "test zone",
 	SigningAlgorithm: "HS256",
 	Key:              initKeys(),
-	Timeout:          time.Hour,
-	MaxRefresh:       time.Hour,
+	Timeout:          time.Hour * 24,
+	MaxRefresh:       time.Hour * 168,
 	Authenticator:    Authenticator,
 	Authorizator:     Authorizator,
 	PayloadFunc:      PayloadFunc,
 	Unauthorized:     Unauthorized,
+	Response:         Response,
 	// TokenLookup is a string in the form of "<source>:<name>" that is used
 	// to extract token from the request.
 	// Optional. Default value "header:Authorization".
@@ -49,23 +52,25 @@ func initKeys() []byte {
 
 }
 
-func Authenticator(email string, password string, ctx *gin.Context) (userName string, ok bool) {
+func Authenticator(email string, password string, ctx *gin.Context) (userName *db.User, ok bool) {
+
+	var user *db.User
 
 	if email != "" || password != "" {
 
-		user := db.FindUserByName(email)
+		user = db.FindUserByName(email)
 
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-			return "", false
+			return user, false
 		}
 
 		user.LastLogin = time.Now()
-		db.UpdateUser(&user)
+		db.UpdateUser(user)
 
-		return userName, true
+		return user, true
 	}
 
-	return "", false
+	return user, false
 
 }
 
@@ -83,6 +88,20 @@ func PayloadFunc(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"hash": newHash,
 	}
+}
+
+func Response(codeHTTP, codeERR int, message string, ctx *gin.Context) {
+	response := map[string]interface{}{
+		"code":    codeERR,
+		"message": message,
+	}
+
+	if ctx.Request.Method == http.MethodGet {
+		ctx.Writer.WriteHeader(codeHTTP)
+	} else {
+		ctx.JSON(codeHTTP, &response)
+	}
+	ctx.Abort()
 }
 
 func Unauthorized(ctx *gin.Context, codeHTTP int, codeERR int, message string) {

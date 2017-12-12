@@ -31,18 +31,19 @@ func InitDB() error {
 	return nil
 }
 
-func FindUserByName(email string) User {
+func FindUserByName(email string) *User {
 	var user User
 
 	DB.Where("email=?", email).First(&user)
 
-	return user
+	return &user
 }
 
 func CheckUserByEmail(email string) (User, bool) {
 	var user User
 
-	user = FindUserByName(email)
+	DB.Where("email=?", email).First(&user)
+
 	if !reflect.DeepEqual(user, User{}) {
 		return user, true
 	}

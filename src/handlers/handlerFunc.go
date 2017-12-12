@@ -21,12 +21,14 @@ import (
 )
 
 func loginReq(ctx *gin.Context) {
-	tokenString, _, err := middlewares.AuthMiddleware.LoginHandler(ctx)
+	tokens, err := middlewares.AuthMiddleware.LoginHandler(ctx)
+	tokenAccess := tokens["token"]
+	tokenRefresh := tokens["tokenRefresh"]
 	if err != nil {
 		RespondWithMessage(http.StatusBadRequest, 201, fmt.Sprintf(utils.LoginError[201], err.Error()), ctx)
 		return
 	}
-	RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], tokenString), ctx)
+	RespondWithMessage(http.StatusOK, 109, fmt.Sprintf(utils.UserRegisterError[109], tokenAccess, tokenRefresh), ctx)
 }
 
 func resetPasswordReq(ctx *gin.Context) {
@@ -40,7 +42,7 @@ func resetPasswordReq(ctx *gin.Context) {
 		}
 
 		tokenReset := utils.NewToken(resetPassword.Email, 24*time.Hour, hashPassword, middlewares.AuthMiddleware.Key)
-		fullPath := "http://localhost" + config.AppConfig.Port + "/token/" + tokenReset
+		fullPath := ctx.Request.URL.Scheme + ctx.Request.URL.Host + config.AppConfig.Port + "/token/" + tokenReset
 
 		bodyMessage := "Please click " + fullPath + " for reset you password"
 		err = utils.SendEmail(config.AppConfig.SendEmail.Server, config.AppConfig.SendEmail.Port, config.AppConfig.SendEmail.Sender,
@@ -112,7 +114,7 @@ func changePasswordUser(ctx *gin.Context) {
 		user.Password = string(newHash)
 		user.LastLogin = time.Now()
 
-		db.UpdateUser(&user)
+		db.UpdateUser(user)
 
 		RespondWithMessage(http.StatusOK, 200, "Successful", ctx)
 
@@ -143,13 +145,19 @@ func registerUser(ctx *gin.Context) {
 			user.Password = string(hash)
 			user.LastLogin = time.Now()
 
+			jwtTokens, err := middlewares.AuthMiddleware.TokenGenerator(&user)
+			if err != nil {
+
+				return
+			}
+
+			user.RefreshToken = jwtTokens["token_refresh"]
+
 			if err := db.AddUser(&user); err != nil {
 				RespondWithMessage(http.StatusBadRequest, 108, utils.UserRegisterError[108], ctx)
 			} else {
 
-				jwtToken, _, _ := middlewares.AuthMiddleware.TokenGenerator(user.Email)
-
-				RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], jwtToken), ctx)
+				RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], jwtTokens["token"], jwtTokens["token_refresh"]), ctx)
 			}
 		} else {
 			RespondWithMessage(http.StatusBadRequest, 101, utils.UserRegisterError[101], ctx)
@@ -161,6 +169,7 @@ func registerUser(ctx *gin.Context) {
 		checkErrors(err, ctx)
 	}
 }
+
 func refreshToken(ctx *gin.Context) {
 	middlewares.AuthMiddleware.RefreshHandler(ctx)
 }

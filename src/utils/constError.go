@@ -9,7 +9,7 @@ var UserRegisterError = map[int]string{
 	106: "Invalid validation on field Confirm password",
 	107: "Password and confirm password not equals",
 	108: "Server internal error",
-	109: "Token %s",
+	109: "Token:%s;RefreshToken:%s",
 }
 
 var LoginError = map[int]string{
