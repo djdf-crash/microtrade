@@ -23,7 +23,8 @@ import (
 func loginReq(ctx *gin.Context) {
 	tokens, err := middlewares.AuthMiddleware.LoginHandler(ctx)
 	tokenAccess := tokens["token"]
-	tokenRefresh := tokens["tokenRefresh"]
+	tokenRefresh := tokens["token_refresh"]
+
 	if err != nil {
 		RespondWithMessage(http.StatusBadRequest, 201, fmt.Sprintf(utils.LoginError[201], err.Error()), ctx)
 		return
@@ -41,7 +42,7 @@ func resetPasswordReq(ctx *gin.Context) {
 			return
 		}
 
-		tokenReset := utils.NewToken(resetPassword.Email, 24*time.Hour, hashPassword, middlewares.AuthMiddleware.Key)
+		tokenReset := utils.NewToken(resetPassword.Email, 24*time.Hour, hashPassword, middlewares.AuthMiddleware.VerifyKey)
 		fullPath := ctx.Request.URL.Scheme + ctx.Request.URL.Host + config.AppConfig.Port + "/token/" + tokenReset
 
 		bodyMessage := "Please click " + fullPath + " for reset you password"
@@ -66,7 +67,7 @@ func confirmPasswordReq(ctx *gin.Context) {
 		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
 	}
 
-	_, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.Key)
+	_, err := utils.VerifyToken(token, getPasswordHash, middlewares.AuthMiddleware.VerifyKey)
 	if err != nil {
 		ctx.Redirect(http.StatusTemporaryRedirect, "/#/404/")
 		//RespondWithMessage(http.StatusNotFound, "", ctx)

@@ -23,7 +23,7 @@
 		{
 			"importpath": "github.com/dustin/go-broadcast",
 			"repository": "https://github.com/dustin/go-broadcast",
-			"revision": "3bdf6d4a7164a50bc19d5f230e2981d87d2584f1",
+			"revision": "f664265f5a662fb4d1df7f3533b1e8d0e0277120",
 			"branch": "master"
 		},
 		{
@@ -114,7 +114,7 @@
 		{
 			"importpath": "github.com/ugorji/go/codec",
 			"repository": "https://github.com/ugorji/go",
-			"revision": "f0aa215a7d653544d39d0e27dfa10fa4b183f397",
+			"revision": "0e0d6e869525973a9b36093f6ddc9d91b9fc2d71",
 			"branch": "master",
 			"path": "/codec"
 		},
@@ -163,7 +163,7 @@
 		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
-			"revision": "a8b9294777976932365dabb6640cf1468d95c70f",
+			"revision": "d866cfc389cec985d6fda2859936a575a55a3ab6",
 			"branch": "master",
 			"path": "/context"
 		},
@@ -177,7 +177,7 @@
 		{
 			"importpath": "golang.org/x/sys/unix",
 			"repository": "https://go.googlesource.com/sys",
-			"revision": "8b4580aae2a0dd0c231a45d3ccb8434ff533b840",
+			"revision": "1d2aa6dbdea45adaaebb9905d0666e4537563829",
 			"branch": "master",
 			"path": "/unix"
 		},

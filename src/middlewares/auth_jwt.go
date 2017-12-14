@@ -8,15 +8,12 @@ import (
 
 	"db"
 
-	"crypto/md5"
-
 	"utils"
 
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/dgrijalva/jwt-go.v3"
 )
 
@@ -34,7 +31,9 @@ type GinJWTMiddleware struct {
 	SigningAlgorithm string
 
 	// Secret key used for signing. Required.
-	Key []byte
+	VerifyKey []byte
+
+	SignKey []byte
 
 	// Duration that a jwt token is valid. Optional, defaults to one hour.
 	Timeout time.Duration
@@ -137,7 +136,7 @@ func (mw *GinJWTMiddleware) MiddlewareInit() error {
 		return errors.New("realm is required")
 	}
 
-	if mw.Key == nil {
+	if mw.SignKey == nil {
 		return errors.New("secret key is required")
 	}
 
@@ -173,15 +172,15 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	c.Set("JWT_PAYLOAD", claims)
 	c.Set("userID", id)
 
-	user := db.FindUserByName(id)
-
-	md5 := md5.New()
-	newHash := string(md5.Sum([]byte(user.Password)))
-
-	if !strings.EqualFold(claims["hash"].(string), newHash) {
-		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
-		return
-	}
+	//user := db.FindUserByName(id)
+	//
+	//md5 := md5.New()
+	//newHash := string(md5.Sum([]byte(user.Password)))
+	//
+	//if !strings.EqualFold(claims["hash"].(string), newHash) {
+	//	mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
+	//	return
+	//}
 
 	if !mw.Authorizator(id, c) {
 		mw.unauthorized(c, http.StatusUnauthorized, -1, utils.CommonError[-1])
@@ -229,7 +228,7 @@ func (mw *GinJWTMiddleware) LoginHandler(c *gin.Context) (map[string]string, err
 	}
 
 	userID.RefreshToken = tokens["token_refresh"]
-
+	userID.LastLogin = time.Now()
 	db.UpdateUser(userID)
 
 	tokens = map[string]string{
@@ -267,27 +266,13 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 
 	user := db.FindUserByName(claims["id"].(string))
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(claims["hash"].(string))); err != nil {
-		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
-		return
-	}
-
-	if tokenString, err := token.SigningString(); err == nil {
-		if !strings.EqualFold(tokenString, user.RefreshToken) {
-			mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
-			return
-		}
-	} else {
+	if !strings.EqualFold(token.Raw, user.RefreshToken) {
 		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
 		return
 	}
 
 	// Create the token
-	tokensMap, err := mw.TokenGenerator(user)
-
-	if err != nil {
-
-	}
+	tokensMap, _ := mw.TokenGenerator(user)
 
 	user.RefreshToken = tokensMap["token_refresh"]
 
@@ -311,8 +296,8 @@ func ExtractClaims(c *gin.Context) jwt.MapClaims {
 
 // TokenGenerator method that clients can use to get a jwt token.
 func (mw *GinJWTMiddleware) TokenGenerator(userID *db.User) (map[string]string, error) {
-	token := jwt.New(jwt.GetSigningMethod(mw.SigningAlgorithm))
-	claims := token.Claims.(jwt.MapClaims)
+
+	claims := jwt.MapClaims{}
 
 	if mw.PayloadFunc != nil {
 		for key, value := range mw.PayloadFunc(userID.Email) {
@@ -321,12 +306,21 @@ func (mw *GinJWTMiddleware) TokenGenerator(userID *db.User) (map[string]string, 
 	}
 
 	expire := mw.TimeFunc().UTC().Add(mw.Timeout)
-	claims["id"] = userID
+	claims["id"] = userID.Email
 	claims["exp"] = expire.Unix()
 	claims["orig_iat"] = mw.TimeFunc().Unix()
 
-	tokenString, err := token.SignedString(mw.Key)
-	tokenRefresh, err := mw.TokenRefreshGenerator(userID, claims)
+	token := jwt.NewWithClaims(jwt.GetSigningMethod(mw.SigningAlgorithm), claims)
+
+	signKey, _ := jwt.ParseRSAPrivateKeyFromPEM(mw.SignKey)
+
+	tokenString, err := token.SignedString(signKey)
+
+	if err != nil {
+		return map[string]string{}, errors.New("Create JWT Token faild")
+	}
+
+	tokenRefresh, err := mw.TokenRefreshGenerator(userID, userID.Email)
 
 	if err != nil {
 		return map[string]string{}, errors.New("Create JWT Token faild")
@@ -339,25 +333,30 @@ func (mw *GinJWTMiddleware) TokenGenerator(userID *db.User) (map[string]string, 
 }
 
 // TokenGenerator method that clients can use to get a jwt token.
-func (mw *GinJWTMiddleware) TokenRefreshGenerator(user *db.User, claims jwt.MapClaims) (string, error) {
+func (mw *GinJWTMiddleware) TokenRefreshGenerator(user *db.User, userID string) (string, error) {
 
-	newToken := jwt.New(jwt.GetSigningMethod(mw.SigningAlgorithm))
-	newClaims := newToken.Claims.(jwt.MapClaims)
+	newClaims := jwt.MapClaims{}
 
-	for key := range claims {
-		newClaims[key] = claims[key]
+	if mw.PayloadFunc != nil {
+		for key, value := range mw.PayloadFunc(user.Email) {
+			newClaims[key] = value
+		}
 	}
 
-	origIat := float64(claims["orig_iat"].(int64))
+	//origIat := float64(claims["orig_iat"].(int64))
 
-	expire := mw.TimeFunc().Add(mw.Timeout)
-	newClaims["id"] = claims["id"]
+	expire := mw.TimeFunc().Add(mw.MaxRefresh)
+	newClaims["id"] = userID
 	newClaims["exp"] = expire.Unix()
-	newClaims["orig_iat"] = origIat
+	newClaims["orig_iat"] = mw.TimeFunc().Unix()
 
-	tokenString, _ := newToken.SignedString(mw.Key)
+	token := jwt.NewWithClaims(jwt.GetSigningMethod(mw.SigningAlgorithm), &newClaims)
 
-	return tokenString, nil
+	signKey, _ := jwt.ParseRSAPrivateKeyFromPEM(mw.SignKey)
+
+	tokenString, err := token.SignedString(signKey)
+
+	return tokenString, err
 }
 
 func (mw *GinJWTMiddleware) jwtFromHeader(c *gin.Context, key string) (string, error) {
@@ -418,7 +417,9 @@ func (mw *GinJWTMiddleware) parseToken(c *gin.Context) (*jwt.Token, error) {
 			return nil, errors.New("invalid signing algorithm")
 		}
 
-		return mw.Key, nil
+		verifyKey, _ := jwt.ParseRSAPublicKeyFromPEM(mw.VerifyKey)
+
+		return verifyKey, nil
 	})
 }
 

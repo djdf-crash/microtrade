@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"crypto/md5"
-
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,15 +17,16 @@ var (
 
 var AuthMiddleware = &GinJWTMiddleware{
 	Realm:            "test zone",
-	SigningAlgorithm: "HS256",
-	Key:              initKeys(),
+	SigningAlgorithm: "RS256",
+	VerifyKey:        initVerifyKey(),
+	SignKey:          initSignKey(),
 	Timeout:          time.Hour * 24,
 	MaxRefresh:       time.Hour * 168,
 	Authenticator:    Authenticator,
 	Authorizator:     Authorizator,
-	PayloadFunc:      PayloadFunc,
-	Unauthorized:     Unauthorized,
-	Response:         Response,
+	//PayloadFunc:    PayloadFunc,
+	Unauthorized: Unauthorized,
+	Response:     Response,
 	// TokenLookup is a string in the form of "<source>:<name>" that is used
 	// to extract token from the request.
 	// Optional. Default value "header:Authorization".
@@ -46,7 +45,13 @@ var AuthMiddleware = &GinJWTMiddleware{
 	TimeFunc: time.Now,
 }
 
-func initKeys() []byte {
+func initVerifyKey() []byte {
+	signBytes, _ = ioutil.ReadFile("./keys/public.rsa")
+	return signBytes
+
+}
+
+func initSignKey() []byte {
 	signBytes, _ = ioutil.ReadFile("./keys/secret.rsa")
 	return signBytes
 
@@ -80,15 +85,16 @@ func Authorizator(email string, ctx *gin.Context) bool {
 	return true
 }
 
-func PayloadFunc(userID string) map[string]interface{} {
-
-	user := db.FindUserByName(userID)
-	md5 := md5.New()
-	newHash := string(md5.Sum([]byte(user.Password)))
-	return map[string]interface{}{
-		"hash": newHash,
-	}
-}
+//func PayloadFunc(userID string) map[string]interface{} {
+//
+//	//return map[string]interface{}
+//	//user := db.FindUserByName(userID)
+//	//md5 := md5.New()
+//	//newHash := string(md5.Sum([]byte(user.Password)))
+//	//return map[string]interface{}{
+//	//	"hash": newHash,
+//	//}
+//}
 
 func Response(codeHTTP, codeERR int, message string, ctx *gin.Context) {
 	response := map[string]interface{}{
