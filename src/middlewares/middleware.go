@@ -17,12 +17,11 @@ var AuthMiddleware = &GinJWTMiddleware{
 	VerifyKey:        initVerifyKey(),
 	SignKey:          initSignKey(),
 	Timeout:          time.Hour * 24,
-	MaxRefresh:       time.Hour * 168,
+	MaxRefresh:       time.Hour,
 	Authenticator:    Authenticator,
 	Authorizator:     Authorizator,
-	//PayloadFunc:    PayloadFunc,
-	Unauthorized: Unauthorized,
-	Response:     Response,
+	Unauthorized:     Unauthorized,
+	Response:         Response,
 	// TokenLookup is a string in the form of "<source>:<name>" that is used
 	// to extract token from the request.
 	// Optional. Default value "header:Authorization".

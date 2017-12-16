@@ -170,16 +170,6 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	c.Set("JWT_PAYLOAD", claims)
 	c.Set("userID", id)
 
-	//user := db.FindUserByName(id)
-	//
-	//md5 := md5.New()
-	//newHash := string(md5.Sum([]byte(user.Password)))
-	//
-	//if !strings.EqualFold(claims["hash"].(string), newHash) {
-	//	mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
-	//	return
-	//}
-
 	if !mw.Authorizator(id, c) {
 		mw.unauthorized(c, http.StatusUnauthorized, -1, utils.CommonError[-1])
 		return
@@ -330,7 +320,7 @@ func (mw *GinJWTMiddleware) TokenRefreshGenerator(user *db.User, userID string) 
 
 	//origIat := float64(claims["orig_iat"].(int64))
 
-	expire := mw.TimeFunc().Add(mw.MaxRefresh)
+	expire := mw.TimeFunc().Add(mw.Timeout).Add(mw.MaxRefresh)
 	newClaims["id"] = userID
 	newClaims["exp"] = expire.Unix()
 	newClaims["orig_iat"] = mw.TimeFunc().Unix()
