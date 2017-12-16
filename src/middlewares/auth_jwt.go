@@ -167,6 +167,7 @@ func (mw *GinJWTMiddleware) middlewareImpl(c *gin.Context) {
 	claims := token.Claims.(jwt.MapClaims)
 
 	id := mw.IdentityHandler(claims)
+	c.Set("JWT_TOKEN", token)
 	c.Set("JWT_PAYLOAD", claims)
 	c.Set("userID", id)
 
@@ -224,10 +225,18 @@ func (mw *GinJWTMiddleware) LoginHandler(c *gin.Context) (map[string]string, err
 // Reply will be of the form {"token": "TOKEN"}.
 func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 
-	token, err := mw.parseToken(c)
-	if err != nil {
-		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
-		return
+	var token *jwt.Token
+	var err error
+
+	tokenVal, ok := c.Get("JWT_TOKEN")
+	if !ok {
+		token, err = mw.parseToken(c)
+		if err != nil {
+			mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
+			return
+		}
+	} else {
+		token = tokenVal.(*jwt.Token)
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
@@ -242,7 +251,7 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 	user := db.FindUserByName(claims["id"].(string))
 
 	if !strings.EqualFold(token.Raw, user.RefreshToken) {
-		mw.unauthorized(c, http.StatusUnauthorized, -3, utils.CommonError[-3])
+		mw.unauthorized(c, http.StatusUnauthorized, -5, utils.CommonError[-5])
 		return
 	}
 
