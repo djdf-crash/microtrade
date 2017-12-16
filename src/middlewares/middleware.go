@@ -11,10 +11,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	signBytes []byte
-)
-
 var AuthMiddleware = &GinJWTMiddleware{
 	Realm:            "test zone",
 	SigningAlgorithm: "RS256",
@@ -46,13 +42,13 @@ var AuthMiddleware = &GinJWTMiddleware{
 }
 
 func initVerifyKey() []byte {
-	signBytes, _ = ioutil.ReadFile("./keys/public.rsa")
-	return signBytes
+	verifyBytes, _ := ioutil.ReadFile("./keys/public.rsa")
+	return verifyBytes
 
 }
 
 func initSignKey() []byte {
-	signBytes, _ = ioutil.ReadFile("./keys/secret.rsa")
+	signBytes, _ := ioutil.ReadFile("./keys/secret.rsa")
 	return signBytes
 
 }
@@ -96,17 +92,23 @@ func Authorizator(email string, ctx *gin.Context) bool {
 //	//}
 //}
 
-func Response(codeHTTP, codeERR int, message string, ctx *gin.Context) {
-	response := map[string]interface{}{
-		"code":    codeERR,
-		"message": message,
+func Response(codeHTTP, codeERR int, message interface{}, ctx *gin.Context) {
+
+	if codeHTTP != http.StatusOK {
+		response := map[string]interface{}{
+			"code":    codeERR,
+			"message": message,
+		}
+
+		ctx.JSON(codeHTTP, &response)
+	} else {
+		ctx.JSON(codeHTTP, &message)
 	}
 
 	if ctx.Request.Method == http.MethodGet {
 		ctx.Writer.WriteHeader(codeHTTP)
-	} else {
-		ctx.JSON(codeHTTP, &response)
 	}
+
 	ctx.Abort()
 }
 

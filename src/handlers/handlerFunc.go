@@ -22,14 +22,12 @@ import (
 
 func loginReq(ctx *gin.Context) {
 	tokens, err := middlewares.AuthMiddleware.LoginHandler(ctx)
-	tokenAccess := tokens["token"]
-	tokenRefresh := tokens["token_refresh"]
 
 	if err != nil {
 		RespondWithMessage(http.StatusBadRequest, 201, fmt.Sprintf(utils.LoginError[201], err.Error()), ctx)
 		return
 	}
-	RespondWithMessage(http.StatusOK, 109, fmt.Sprintf(utils.UserRegisterError[109], tokenAccess, tokenRefresh), ctx)
+	RespondWithMessage(http.StatusOK, 200, tokens, ctx)
 }
 
 func resetPasswordReq(ctx *gin.Context) {
@@ -158,7 +156,7 @@ func registerUser(ctx *gin.Context) {
 				RespondWithMessage(http.StatusBadRequest, 108, utils.UserRegisterError[108], ctx)
 			} else {
 
-				RespondWithMessage(http.StatusCreated, 109, fmt.Sprintf(utils.UserRegisterError[109], jwtTokens["token"], jwtTokens["token_refresh"]), ctx)
+				RespondWithMessage(http.StatusOK, 200, jwtTokens, ctx)
 			}
 		} else {
 			RespondWithMessage(http.StatusBadRequest, 101, utils.UserRegisterError[101], ctx)
@@ -224,17 +222,21 @@ func errorBindingValidation(validatorErrors validator.ValidationErrors, ctx *gin
 	RespondWithMessage(http.StatusBadRequest, codeError, mess, ctx)
 }
 
-func RespondWithMessage(codeResponse int, codeError int, message string, ctx *gin.Context) {
+func RespondWithMessage(codeResponse int, codeError int, message interface{}, ctx *gin.Context) {
 
-	response := map[string]interface{}{
-		"code":    codeError,
-		"message": message,
+	if codeResponse != http.StatusOK {
+		response := map[string]interface{}{
+			"code":    codeError,
+			"message": message,
+		}
+
+		ctx.JSON(codeResponse, &response)
+	} else {
+		ctx.JSON(codeResponse, &message)
 	}
 
 	if ctx.Request.Method == http.MethodGet {
 		ctx.Writer.WriteHeader(codeResponse)
-	} else {
-		ctx.JSON(codeResponse, &response)
 	}
 
 	ctx.Abort()

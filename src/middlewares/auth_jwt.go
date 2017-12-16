@@ -10,8 +10,6 @@ import (
 
 	"utils"
 
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"gopkg.in/dgrijalva/jwt-go.v3"
@@ -65,7 +63,7 @@ type GinJWTMiddleware struct {
 	// User can define own Unauthorized func.
 	Unauthorized func(*gin.Context, int, int, string)
 
-	Response func(codeHTTP int, codeERR int, message string, c *gin.Context)
+	Response func(codeHTTP int, codeERR int, message interface{}, c *gin.Context)
 
 	// Set the identity handler function
 	IdentityHandler func(jwt.MapClaims) string
@@ -217,10 +215,6 @@ func (mw *GinJWTMiddleware) LoginHandler(c *gin.Context) (map[string]string, err
 		return tokens, errors.New("Incorrect Username / Password")
 	}
 
-	//if userID == "" {
-	//	userID = loginVals.Email
-	//}
-
 	tokens, err := mw.TokenGenerator(userID)
 
 	if err != nil {
@@ -231,17 +225,8 @@ func (mw *GinJWTMiddleware) LoginHandler(c *gin.Context) (map[string]string, err
 	userID.LastLogin = time.Now()
 	db.UpdateUser(userID)
 
-	tokens = map[string]string{
-		"token":         tokens["token"],
-		"token_refresh": tokens["token_refresh"],
-	}
-
 	return tokens, nil
-	//
-	//c.JSON(http.StatusOK, gin.H{
-	//	"token":  tokenString,
-	//	"expire": expire.Format(time.RFC3339),
-	//})
+
 }
 
 // RefreshHandler can be used to refresh a token. The token still needs to be valid on refresh.
@@ -278,7 +263,7 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 
 	db.UpdateUser(user)
 
-	mw.Response(http.StatusOK, 109, fmt.Sprintf(utils.UserRegisterError[109], tokensMap["token"], tokensMap["token_refresh"]), c)
+	mw.Response(http.StatusOK, 200, tokensMap, c)
 }
 
 // ExtractClaims help to extract the JWT claims
